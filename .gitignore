@@ -43,3 +43,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+coverage/
+*.log

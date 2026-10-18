@@ -1,0 +1,50 @@
+{
+  "info": {
+    "_postman_id": "a66213aa-8035-41b1-844f-052340aa285c",
+    "name": "RoadRunner - Person 1 Fleet and Driver",
+    "description": "Person 1 API walkthrough. Start the backend on port 4000, then run requests in order. A unique test tag is generated before the vehicle request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000/api" },
+    { "key": "runTag", "value": "" },
+    { "key": "vehicleId", "value": "" },
+    { "key": "driverId", "value": "" },
+    { "key": "fuelId", "value": "" },
+    { "key": "maintenanceId", "value": "" }
+  ],
+  "item": [
+    { "name": "Health", "request": { "method": "GET", "url": "{{baseUrl}}/health" } },
+    {
+      "name": "Create vehicle",
+      "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": ["pm.collectionVariables.set('runTag', Date.now().toString().slice(-8));"] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Vehicle created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('vehicleId', pm.response.json().id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"registrationNo\": \"QA-{{runTag}}\",\n  \"make\": \"Test\",\n  \"model\": \"Fleet\",\n  \"vehicleType\": \"Van\",\n  \"capacity\": 8,\n  \"fuelType\": \"DIESEL\",\n  \"status\": \"AVAILABLE\",\n  \"odometerKm\": 100\n}" }, "url": "{{baseUrl}}/vehicles" }
+    },
+    { "name": "Search vehicles", "request": { "method": "GET", "url": "{{baseUrl}}/vehicles?search=QA-{{runTag}}" } },
+    { "name": "Update vehicle status", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"status\":\"MAINTENANCE\",\"odometerKm\":125}" }, "url": "{{baseUrl}}/vehicles/{{vehicleId}}" } },
+    {
+      "name": "Create driver",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Driver created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('driverId', pm.response.json().id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Test\",\n  \"lastName\": \"Driver\",\n  \"phone\": \"+91999{{runTag}}\",\n  \"email\": \"qa.{{runTag}}@example.test\",\n  \"licenceNumber\": \"QA-{{runTag}}\",\n  \"licenceExpiry\": \"2030-12-31\",\n  \"status\": \"AVAILABLE\"\n}" }, "url": "{{baseUrl}}/drivers" }
+    },
+    { "name": "Search drivers", "request": { "method": "GET", "url": "{{baseUrl}}/drivers?search=QA-{{runTag}}" } },
+    { "name": "Update driver status", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"status\":\"ON_TRIP\"}" }, "url": "{{baseUrl}}/drivers/{{driverId}}" } },
+    {
+      "name": "Create fuel log",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Fuel log created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('fuelId', pm.response.json().id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": {{vehicleId}},\n  \"quantityLitres\": 25,\n  \"cost\": 2500,\n  \"refuelledAt\": \"2026-10-01\",\n  \"odometerKm\": 140,\n  \"station\": \"Postman test\"\n}" }, "url": "{{baseUrl}}/fuel" }
+    },
+    { "name": "Fuel spend summary", "request": { "method": "GET", "url": "{{baseUrl}}/fuel/summary" } },
+    { "name": "Update fuel log", "request": { "method": "PUT", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\"cost\":2600}" }, "url": "{{baseUrl}}/fuel/{{fuelId}}" } },
+    {
+      "name": "Create due maintenance",
+      "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": ["pm.test('Maintenance created', () => pm.response.to.have.status(201));", "pm.collectionVariables.set('maintenanceId', pm.response.json().id);"] } }],
+      "request": { "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"vehicleId\": {{vehicleId}},\n  \"serviceDate\": \"2026-01-01\",\n  \"description\": \"Postman due inspection\",\n  \"cost\": 500,\n  \"nextServiceDate\": \"2020-01-01\",\n  \"status\": \"SCHEDULED\"\n}" }, "url": "{{baseUrl}}/maintenance" }
+    },
+    { "name": "List due maintenance", "request": { "method": "GET", "url": "{{baseUrl}}/maintenance?due=true" } },
+    { "name": "Cancel maintenance", "request": { "method": "DELETE", "url": "{{baseUrl}}/maintenance/{{maintenanceId}}" } },
+    { "name": "Delete fuel log", "request": { "method": "DELETE", "url": "{{baseUrl}}/fuel/{{fuelId}}" } },
+    { "name": "Deactivate driver", "request": { "method": "DELETE", "url": "{{baseUrl}}/drivers/{{driverId}}" } },
+    { "name": "Deactivate vehicle", "request": { "method": "DELETE", "url": "{{baseUrl}}/vehicles/{{vehicleId}}" } }
+  ]
+}

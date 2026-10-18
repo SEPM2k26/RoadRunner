@@ -1,0 +1,112 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  INACTIVE
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  INACTIVE
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  CNG
+  ELECTRIC
+  HYBRID
+  OTHER
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Vehicle {
+  id              Int           @id @default(autoincrement())
+  registrationNo  String        @unique @db.VarChar(20)
+  vin             String?       @unique @db.VarChar(40)
+  make            String        @db.VarChar(60)
+  model           String        @db.VarChar(60)
+  manufactureYear Int?
+  vehicleType     String        @db.VarChar(40)
+  capacity        Decimal       @db.Decimal(10, 2)
+  fuelType        FuelType
+  status          VehicleStatus @default(AVAILABLE)
+  odometerKm      Decimal       @default(0) @db.Decimal(12, 2)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  fuelLogs        FuelLog[]
+  maintenance     Maintenance[]
+
+  @@index([status])
+  @@index([vehicleType, status])
+}
+
+model Driver {
+  id            Int          @id @default(autoincrement())
+  firstName     String       @db.VarChar(60)
+  lastName      String       @db.VarChar(60)
+  phone         String       @unique @db.VarChar(25)
+  email         String?      @unique @db.VarChar(254)
+  licenceNumber String       @unique @db.VarChar(50)
+  licenceExpiry DateTime     @db.Date
+  status        DriverStatus @default(AVAILABLE)
+  hiredAt       DateTime?    @db.Date
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status])
+  @@index([licenceExpiry])
+}
+
+model FuelLog {
+  id             Int      @id @default(autoincrement())
+  vehicleId      Int
+  refuelledAt    DateTime @default(now())
+  quantityLitres Decimal  @db.Decimal(10, 2)
+  cost           Decimal  @db.Decimal(10, 2)
+  odometerKm     Decimal? @db.Decimal(12, 2)
+  station        String?  @db.VarChar(120)
+  notes          String?  @db.VarChar(500)
+  createdAt      DateTime @default(now())
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([vehicleId, refuelledAt])
+  @@index([refuelledAt])
+}
+
+model Maintenance {
+  id              Int               @id @default(autoincrement())
+  vehicleId       Int
+  serviceDate     DateTime          @default(now())
+  description     String            @db.VarChar(500)
+  cost            Decimal           @default(0) @db.Decimal(10, 2)
+  odometerKm      Decimal?          @db.Decimal(12, 2)
+  nextServiceDate DateTime?         @db.Date
+  status          MaintenanceStatus @default(COMPLETED)
+  provider        String?           @db.VarChar(120)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  vehicle         Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([vehicleId, serviceDate])
+  @@index([status, nextServiceDate])
+}
+
+

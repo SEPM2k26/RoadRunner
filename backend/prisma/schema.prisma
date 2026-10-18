@@ -1,0 +1,281 @@
+// RoadRunner - Traffic & Fleet Management System
+// Complete Prisma Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// PERSON 1 TABLES: Fleet & Driver Management
+// ============================================================
+
+model Vehicle {
+  id                 Int                   @id @default(autoincrement())
+  registrationNumber String                @unique @map("registration_number") @db.VarChar(20)
+  vehicleType        VehicleType           @map("vehicle_type")
+  make               String                @db.VarChar(50)
+  model              String                @db.VarChar(50)
+  year               Int
+  capacity           Int
+  fuelType           FuelType              @map("fuel_type")
+  status             VehicleStatus         @default(AVAILABLE)
+  odometer           Float                 @default(0)
+  createdAt          DateTime              @default(now()) @map("created_at")
+  updatedAt          DateTime              @updatedAt @map("updated_at")
+  trips              Trip[]
+  fuelLogs           FuelLog[]
+  maintenanceRecords Maintenance[]
+  predictions        TripDelayPrediction[]
+  @@map("vehicles")
+  @@index([status])
+  @@index([vehicleType])
+}
+
+model Driver {
+  id            Int          @id @default(autoincrement())
+  name          String       @db.VarChar(100)
+  email         String       @unique @db.VarChar(100)
+  phone         String       @unique @db.VarChar(20)
+  licenceNumber String       @unique @map("licence_number") @db.VarChar(30)
+  licenceExpiry DateTime     @map("licence_expiry")
+  address       String?      @db.VarChar(255)
+  dateOfBirth   DateTime?    @map("date_of_birth")
+  status        DriverStatus @default(AVAILABLE)
+  hiredAt       DateTime     @default(now()) @map("hired_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  trips         Trip[]
+  @@map("drivers")
+  @@index([status])
+}
+
+model FuelLog {
+  id           Int      @id @default(autoincrement())
+  vehicleId    Int      @map("vehicle_id")
+  tripId       Int?     @map("trip_id")
+  fuelQuantity Float    @map("fuel_quantity")
+  fuelCost     Float    @map("fuel_cost")
+  odometer     Float
+  fuelDate     DateTime @map("fuel_date")
+  station      String?  @db.VarChar(100)
+  notes        String?  @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  vehicle      Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  trip         Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  @@map("fuel_logs")
+  @@index([vehicleId])
+  @@index([fuelDate])
+}
+
+model Maintenance {
+  id              Int               @id @default(autoincrement())
+  vehicleId       Int               @map("vehicle_id")
+  maintenanceType MaintenanceType   @map("maintenance_type")
+  description     String            @db.Text
+  cost            Float
+  startDate       DateTime          @map("start_date")
+  endDate         DateTime?         @map("end_date")
+  nextServiceDate DateTime?         @map("next_service_date")
+  odometer        Float
+  status          MaintenanceStatus @default(SCHEDULED)
+  technician      String?           @db.VarChar(100)
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  vehicle         Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  @@map("maintenance_records")
+  @@index([vehicleId])
+  @@index([status])
+  @@index([nextServiceDate])
+}
+
+// ============================================================
+// PERSON 2 TABLES: Routes, Trips & Traffic Incidents
+// ============================================================
+
+model Route {
+  id               Int               @id @default(autoincrement())
+  name             String            @db.VarChar(100)
+  source           String            @db.VarChar(100)
+  destination      String            @db.VarChar(100)
+  distanceKm       Float             @map("distance_km")
+  expectedDuration Int               @map("expected_duration")
+  description      String?           @db.Text
+  status           RouteStatus       @default(ACTIVE)
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  trips            Trip[]
+  incidents        TrafficIncident[]
+  predictions      TripDelayPrediction[]
+  @@map("routes")
+  @@index([status])
+}
+
+model Trip {
+  id               Int         @id @default(autoincrement())
+  routeId          Int         @map("route_id")
+  vehicleId        Int         @map("vehicle_id")
+  driverId         Int         @map("driver_id")
+  scheduledAt      DateTime    @map("scheduled_at")
+  departedAt       DateTime?   @map("departed_at")
+  arrivedAt        DateTime?   @map("arrived_at")
+  status           TripStatus  @default(SCHEDULED)
+  actualDistanceKm Float?      @map("actual_distance_km")
+  delayMinutes     Int?        @map("delay_minutes")
+  passengerCount   Int?        @map("passenger_count")
+  cargoWeightKg    Float?      @map("cargo_weight_kg")
+  notes            String?     @db.Text
+  createdAt        DateTime    @default(now()) @map("created_at")
+  updatedAt        DateTime    @updatedAt @map("updated_at")
+  route            Route       @relation(fields: [routeId], references: [id])
+  vehicle          Vehicle     @relation(fields: [vehicleId], references: [id])
+  driver           Driver      @relation(fields: [driverId], references: [id])
+  fuelLogs         FuelLog[]
+  predictions      TripDelayPrediction[]
+  @@map("trips")
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([routeId])
+}
+
+model TrafficIncident {
+  id             Int              @id @default(autoincrement())
+  routeId        Int              @map("route_id")
+  incidentType   IncidentType     @map("incident_type")
+  severity       IncidentSeverity
+  location       String           @db.VarChar(255)
+  description    String?          @db.Text
+  reportedAt     DateTime         @map("reported_at")
+  resolvedAt     DateTime?        @map("resolved_at")
+  estimatedDelay Int?             @map("estimated_delay")
+  status         IncidentStatus   @default(ACTIVE)
+  reportedBy     String?          @map("reported_by") @db.VarChar(100)
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  route          Route            @relation(fields: [routeId], references: [id])
+  @@map("traffic_incidents")
+  @@index([routeId])
+  @@index([status])
+  @@index([severity])
+  @@index([reportedAt])
+}
+
+// ============================================================
+// PERSON 3 TABLE: AI/ML Trip Delay Predictions
+// ============================================================
+
+model TripDelayPrediction {
+  id                 Int      @id @default(autoincrement())
+  tripId             Int?     @map("trip_id")
+  routeId            Int      @map("route_id")
+  vehicleId          Int?     @map("vehicle_id")
+  routeDistance      Float    @map("route_distance")
+  departureHour      Int      @map("departure_hour")
+  dayOfWeek          Int      @map("day_of_week")
+  historicalAvgDelay Float    @map("historical_avg_delay")
+  activeIncidents    Int      @map("active_incidents")
+  predictedDelay     Float    @map("predicted_delay")
+  modelVersion       String   @default("v1") @map("model_version") @db.VarChar(20)
+  confidence         Float?
+  createdAt          DateTime @default(now()) @map("created_at")
+  trip               Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  route              Route    @relation(fields: [routeId], references: [id])
+  vehicle            Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  @@map("trip_delay_predictions")
+  @@index([routeId])
+  @@index([createdAt])
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum VehicleType {
+  BUS
+  TRUCK
+  VAN
+  CAR
+  MOTORCYCLE
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  CNG
+  ELECTRIC
+  HYBRID
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  IN_USE
+  MAINTENANCE
+  RETIRED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  ON_LEAVE
+  SUSPENDED
+  RETIRED
+}
+
+enum MaintenanceType {
+  ROUTINE
+  REPAIR
+  INSPECTION
+  EMERGENCY
+  UPGRADE
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum RouteStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum TripStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DELAYED
+}
+
+enum IncidentType {
+  ACCIDENT
+  CONGESTION
+  ROAD_CLOSURE
+  WEATHER
+  CONSTRUCTION
+  OTHER
+}
+
+enum IncidentSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  ACTIVE
+  RESOLVED
+  MONITORING
+}
+

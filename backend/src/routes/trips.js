@@ -15,12 +15,17 @@ router.get('/', async (req, res) => {
       where,
       include: {
         route:   { select: { name: true, source: true, destination: true } },
-        vehicle: { select: { registrationNumber: true, make: true, model: true } },
-        driver:  { select: { name: true, phone: true } },
+        vehicle: { select: { id: true, registrationNo: true, make: true, model: true } },
+        driver:  { select: { id: true, firstName: true, lastName: true, phone: true } },
       },
       orderBy: { scheduledAt: 'desc' },
     });
-    res.json(trips);
+    const formatted = trips.map(t => ({
+      ...t,
+      vehicle: t.vehicle ? { ...t.vehicle, registrationNumber: t.vehicle.registrationNo } : null,
+      driver: t.driver ? { ...t.driver, name: `${t.driver.firstName || ''} ${t.driver.lastName || ''}`.trim() } : null,
+    }));
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -94,12 +94,16 @@ router.get('/delay', async (req, res) => {
       where: routeId ? { routeId: Number(routeId) } : {},
       include: {
         route:   { select: { name: true, source: true, destination: true } },
-        vehicle: { select: { registrationNumber: true } },
+        vehicle: { select: { registrationNo: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
     });
-    res.json(predictions);
+    const formatted = predictions.map(p => ({
+      ...p,
+      vehicle: p.vehicle ? { ...p.vehicle, registrationNumber: p.vehicle.registrationNo } : null,
+    }));
+    res.json(formatted);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

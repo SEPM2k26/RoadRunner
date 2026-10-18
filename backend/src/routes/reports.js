@@ -27,7 +27,7 @@ router.get('/fleet', async (req, res) => {
       prisma.trip.groupBy({ by: ['status'], _count: { id: true } }),
       prisma.trafficIncident.count(),
       prisma.trip.aggregate({ _avg: { delayMinutes: true } }),
-      prisma.fuelLog.aggregate({ _sum: { fuelCost: true } }),
+      prisma.fuelLog.aggregate({ _sum: { cost: true } }),
     ]);
 
     res.json({
@@ -38,7 +38,7 @@ router.get('/fleet', async (req, res) => {
       tripsByStatus,
       totalIncidents,
       avgDelayMinutes: avgDelay._avg.delayMinutes ?? 0,
-      totalFuelCost: totalFuelCost._sum.fuelCost ?? 0,
+      totalFuelCost: totalFuelCost._sum.cost ?? 0,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -53,17 +53,17 @@ router.get('/fuel', async (req, res) => {
     // Fuel per vehicle (GROUP BY vehicleId, aggregate SUM/AVG)
     const fuelPerVehicle = await prisma.fuelLog.groupBy({
       by: ['vehicleId'],
-      _sum: { fuelCost: true, fuelQuantity: true },
-      _avg: { fuelCost: true },
+      _sum: { cost: true, quantityLitres: true },
+      _avg: { cost: true },
       _count: { id: true },
-      orderBy: { _sum: { fuelCost: 'desc' } },
+      orderBy: { _sum: { cost: 'desc' } },
     });
 
     // Enrich with vehicle details
     const vehicleIds = fuelPerVehicle.map(f => f.vehicleId);
     const vehicles = await prisma.vehicle.findMany({
       where: { id: { in: vehicleIds } },
-      select: { id: true, registrationNumber: true, make: true, model: true, vehicleType: true },
+      select: { id: true, registrationNo: true, make: true, model: true, vehicleType: true },
     });
     const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v]));
 
@@ -73,11 +73,11 @@ router.get('/fuel', async (req, res) => {
     }));
 
     // Fleet average
-    const totalCost = enriched.reduce((s, f) => s + (f._sum.fuelCost || 0), 0);
+    const totalCost = enriched.reduce((s, f) => s + (f._sum.cost || 0), 0);
     const fleetAvg = enriched.length ? totalCost / enriched.length : 0;
 
     // Above-average vehicles
-    const aboveAverage = enriched.filter(f => (f._sum.fuelCost || 0) > fleetAvg);
+    const aboveAverage = enriched.filter(f => (f._sum.cost || 0) > fleetAvg);
 
     res.json({ fuelPerVehicle: enriched, fleetAvg, aboveAverage });
   } catch (err) {
@@ -104,9 +104,9 @@ router.get('/trips', async (req, res) => {
     const driverIds = tripsPerDriver.map(t => t.driverId);
     const drivers = await prisma.driver.findMany({
       where: { id: { in: driverIds } },
-      select: { id: true, name: true, licenceNumber: true },
+      select: { id: true, firstName: true, lastName: true, licenceNumber: true },
     });
-    const driverMap = Object.fromEntries(drivers.map(d => [d.id, d]));
+    const driverMap = Object.fromEntries(drivers.map(d => [d.id, { ...d, name: `${d.firstName || ''} ${d.lastName || ''}`.trim() }]));
 
     // Trip completion stats
     const completionStats = await prisma.trip.groupBy({
@@ -183,7 +183,7 @@ router.get('/incidents', async (req, res) => {
     cutoff.setDate(cutoff.getDate() + 30);
     const maintenanceDue = await prisma.maintenance.findMany({
       where: { nextServiceDate: { lte: cutoff }, status: { not: 'COMPLETED' } },
-      include: { vehicle: { select: { registrationNumber: true, make: true, model: true, status: true } } },
+      include: { vehicle: { select: { registrationNo: true, make: true, model: true, status: true } } },
       orderBy: { nextServiceDate: 'asc' },
     });
 
@@ -196,7 +196,7 @@ router.get('/incidents', async (req, res) => {
     const vehicleIds = vehicleUtilisation.map(v => v.vehicleId);
     const vehicles = await prisma.vehicle.findMany({
       where: { id: { in: vehicleIds } },
-      select: { id: true, registrationNumber: true, make: true, model: true },
+      select: { id: true, registrationNo: true, make: true, model: true },
     });
     const vehicleMap = Object.fromEntries(vehicles.map(v => [v.id, v]));
 

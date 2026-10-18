@@ -125,9 +125,9 @@ export default function Reports() {
   if (error)   return <ErrorMsg msg={error} />;
 
   const fuelChartData = (fuel?.fuelPerVehicle || []).slice(0, 8).map(f => ({
-    name: f.vehicle?.registrationNumber || `V${f.vehicleId}`,
-    cost: parseFloat((f._sum?.fuelCost || 0).toFixed(0)),
-    litres: parseFloat((f._sum?.fuelQuantity || 0).toFixed(1)),
+    name: f.vehicle?.registrationNo || f.vehicle?.registrationNumber || `V${f.vehicleId}`,
+    cost: parseFloat(((f._sum?.cost ?? f._sum?.fuelCost) || 0).toFixed(0)),
+    litres: parseFloat(((f._sum?.quantityLitres ?? f._sum?.fuelQuantity) || 0).toFixed(1)),
   }));
 
   const delayChartData = (trips?.delayPerRoute || []).slice(0, 8).map(d => ({
@@ -146,7 +146,7 @@ export default function Reports() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="SQL Analytical Reports"
-        subtitle="Person 3: Multi-table joins, correlated subqueries, aggregations & HAVING filters"
+        subtitle="Multi-table joins, correlated subqueries, aggregations & HAVING filters"
         badgeText="8 Reports"
         badgeColor="bg-tertiary"
         action={
@@ -188,7 +188,7 @@ export default function Reports() {
             <div className="flex flex-wrap gap-2">
               {fuel.aboveAverage.map(f => (
                 <span key={f.vehicleId} className="badge-yellow">
-                  {f.vehicle?.registrationNumber}: ₹{f._sum?.fuelCost?.toFixed(0)}
+                  {f.vehicle?.registrationNo || f.vehicle?.registrationNumber}: ₹{(f._sum?.cost ?? f._sum?.fuelCost)?.toFixed(0)}
                 </span>
               ))}
             </div>
@@ -378,7 +378,7 @@ export default function Reports() {
                     {(incidents?.maintenanceDue || []).map(m => (
                       <tr key={m.id} className="hover:bg-amber-50/50 transition">
                         <td className="py-2.5 px-3 font-mono font-bold text-accent text-xs">
-                          {m.vehicle?.registrationNumber}
+                          {m.vehicle?.registrationNo || m.vehicle?.registrationNumber}
                         </td>
                         <td className="py-2.5 px-3 text-xs font-bold text-foreground">
                           {m.maintenanceType}

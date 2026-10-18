@@ -93,7 +93,7 @@ export default function Dashboard() {
       {/* Playful Header */}
       <PageHeader
         title="Fleet Intelligence"
-        subtitle="Person 3: Real-time telemetry, operational metrics, and aggregate SQL KPIs"
+        subtitle="Real-time telemetry, operational metrics, and aggregate SQL KPIs"
         badgeText="Live Stream"
         badgeColor="bg-quaternary"
       />

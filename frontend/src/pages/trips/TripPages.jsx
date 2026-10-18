@@ -68,9 +68,7 @@ export function RoutesPage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Transit Route Geometry"
-        subtitle="Person 2: Route topology, source-destination nodes, estimated timings, and incident hotspots"
-        badgeText="Person 2"
-        badgeColor="bg-violet-200"
+        subtitle="Route topology, source-destination nodes, estimated timings, and incident hotspots"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Register Route
@@ -314,9 +312,7 @@ export function TripsPage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Trip Scheduling & Live Dispatch"
-        subtitle="Person 2: Multi-resource allocation, ACID state transitions, and real-time transit telemetry"
-        badgeText="Person 2"
-        badgeColor="bg-pink-200"
+        subtitle="Multi-resource allocation, ACID state transitions, and real-time transit telemetry"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Dispatch Journey
@@ -380,7 +376,7 @@ export function TripsPage() {
                     </span>
                   </td>
                   <td className="py-3 px-4 text-xs font-mono font-bold text-slate-700">
-                    {t.vehicle?.registrationNumber}
+                    {t.vehicle?.registrationNo || t.vehicle?.registrationNumber}
                   </td>
                   <td className="py-3 px-4 text-xs">
                     <div className="font-heading font-bold text-foreground">{t.driver?.name}</div>
@@ -471,7 +467,7 @@ export function TripsPage() {
                     ) : (
                       vehicles.map(v => (
                         <option key={v.id} value={v.id}>
-                          {v.registrationNumber} ({v.vehicleType})
+                          {v.registrationNo || v.registrationNumber} ({v.vehicleType})
                         </option>
                       ))
                     )}
@@ -633,9 +629,7 @@ export function IncidentsPage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Traffic Bottlenecks & Hazards"
-        subtitle="Person 2: Real-time hazard logging, severity classification, and delay estimations"
-        badgeText="Person 2"
-        badgeColor="bg-amber-200"
+        subtitle="Real-time hazard logging, severity classification, and delay estimations"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Report Hazard

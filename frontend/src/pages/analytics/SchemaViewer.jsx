@@ -67,7 +67,7 @@ export default function SchemaViewer() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Relational Schema Inspector"
-        subtitle="Person 3: Complete DBMS table specifications, foreign keys, and BCNF normalization proofs"
+        subtitle="Complete DBMS table specifications, foreign keys, and BCNF normalization proofs"
         badgeText="BCNF Verified"
         badgeColor="bg-quaternary"
       />

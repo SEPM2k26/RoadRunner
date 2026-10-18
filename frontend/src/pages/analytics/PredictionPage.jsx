@@ -55,7 +55,7 @@ export default function PredictionPage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="AI Delay Predictor"
-        subtitle="Person 3: Random Forest inference engine predicting trip bottlenecks in real-time"
+        subtitle="Random Forest inference engine predicting trip bottlenecks in real-time"
         badgeText="scikit-learn ML"
         badgeColor="bg-accent text-white"
       />
@@ -107,7 +107,7 @@ export default function PredictionPage() {
                 <option value="">Any available vehicle</option>
                 {vehicles.map(v => (
                   <option key={v.id} value={v.id}>
-                    {v.registrationNumber} — {v.make} {v.model} ({v.vehicleType})
+                    {v.registrationNo || v.registrationNumber} — {v.make} {v.model} ({v.vehicleType})
                   </option>
                 ))}
               </select>

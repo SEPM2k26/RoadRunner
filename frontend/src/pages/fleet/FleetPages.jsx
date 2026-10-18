@@ -52,9 +52,10 @@ export function VehiclesPage() {
     try {
       await vehiclesAPI.create({
         ...formData,
+        registrationNo: formData.registrationNumber,
         year: Number(formData.year),
         capacity: Number(formData.capacity),
-        odometer: Number(formData.odometer)
+        odometerKm: Number(formData.odometer)
       });
       setShowModal(false);
       setFormData({
@@ -88,9 +89,7 @@ export function VehiclesPage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Fleet Vehicle Roster"
-        subtitle="Person 1: Asset inventory, classification, capacity tracking, and status transitions"
-        badgeText="Person 1"
-        badgeColor="bg-sky-200"
+        subtitle="Asset inventory, classification, capacity tracking, and status transitions"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Add Vehicle
@@ -159,12 +158,12 @@ export function VehiclesPage() {
             <tbody className="divide-y divide-slate-200 border-b-2 border-foreground">
               {vehicles.map((v) => (
                 <tr key={v.id} className="hover:bg-amber-50/50 transition">
-                  <td className="py-3.5 px-4 font-mono font-bold text-xs text-accent">{v.registrationNumber}</td>
+                  <td className="py-3.5 px-4 font-mono font-bold text-xs text-accent">{v.registrationNo || v.registrationNumber}</td>
                   <td className="py-3.5 px-4 font-heading font-bold text-foreground">{v.make} {v.model} ({v.year})</td>
                   <td className="py-3.5 px-4 text-xs font-semibold text-slate-700">{v.vehicleType}</td>
                   <td className="py-3.5 px-4 text-xs text-slate-500">{v.fuelType}</td>
                   <td className="py-3.5 px-4 text-xs text-slate-700">{v.capacity} pax/ton</td>
-                  <td className="py-3.5 px-4 text-xs font-mono text-slate-700">{v.odometer.toLocaleString()} km</td>
+                  <td className="py-3.5 px-4 text-xs font-mono text-slate-700">{(v.odometerKm ?? v.odometer ?? 0).toLocaleString()} km</td>
                   <td className="py-3.5 px-4"><StatusBadge value={v.status} /></td>
                   <td className="py-3.5 px-4 text-xs font-bold text-foreground">{v._count?.trips || 0}</td>
                   <td className="py-3.5 px-4 text-right">
@@ -342,8 +341,11 @@ export function DriversPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const parts = (formData.name || '').trim().split(/\s+/);
       await driversAPI.create({
         ...formData,
+        firstName: parts[0] || 'Driver',
+        lastName: parts.slice(1).join(' ') || 'Name',
         licenceExpiry: new Date(formData.licenceExpiry).toISOString()
       });
       setShowModal(false);
@@ -371,19 +373,18 @@ export function DriversPage() {
     }
   };
 
-  const filtered = drivers.filter(d => 
-    d.name.toLowerCase().includes(search.toLowerCase()) ||
-    d.licenceNumber.toLowerCase().includes(search.toLowerCase()) ||
-    d.phone.includes(search)
-  );
+  const filtered = drivers.filter(d => {
+    const dName = d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim();
+    return dName.toLowerCase().includes(search.toLowerCase()) ||
+      (d.licenceNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+      (d.phone || '').includes(search);
+  });
 
   return (
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Fleet Drivers & Compliance"
-        subtitle="Person 1: Operator roster, licensing validity, contact directories, and active availability"
-        badgeText="Person 1"
-        badgeColor="bg-emerald-200"
+        subtitle="Operator roster, licensing validity, contact directories, and active availability"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Register Driver
@@ -441,7 +442,9 @@ export function DriversPage() {
             <tbody className="divide-y divide-slate-200 border-b-2 border-foreground">
               {filtered.map((d) => (
                 <tr key={d.id} className="hover:bg-amber-50/50 transition">
-                  <td className="py-3.5 px-4 font-heading font-bold text-foreground">{d.name}</td>
+                  <td className="py-3.5 px-4 font-heading font-bold text-foreground">
+                    {d.name || `${d.firstName || ''} ${d.lastName || ''}`.trim()}
+                  </td>
                   <td className="py-3.5 px-4 text-xs">
                     <div className="font-semibold text-slate-700">{d.phone}</div>
                     <div className="text-slate-400">{d.email}</div>
@@ -600,9 +603,13 @@ export function FuelPage() {
     try {
       await fuelAPI.create({
         vehicleId: Number(formData.vehicleId),
+        quantityLitres: Number(formData.fuelQuantity),
         fuelQuantity: Number(formData.fuelQuantity),
+        cost: Number(formData.fuelCost),
         fuelCost: Number(formData.fuelCost),
+        odometerKm: Number(formData.odometer),
         odometer: Number(formData.odometer),
+        refuelledAt: new Date(formData.fuelDate).toISOString(),
         fuelDate: new Date(formData.fuelDate).toISOString(),
         station: formData.station,
         notes: formData.notes
@@ -614,17 +621,15 @@ export function FuelPage() {
     }
   };
 
-  const totalFuel = logs.reduce((sum, l) => sum + l.fuelQuantity, 0);
-  const totalCost = logs.reduce((sum, l) => sum + l.fuelCost, 0);
+  const totalFuel = logs.reduce((sum, l) => sum + (Number(l.quantityLitres ?? l.fuelQuantity) || 0), 0);
+  const totalCost = logs.reduce((sum, l) => sum + (Number(l.cost ?? l.fuelCost) || 0), 0);
   const avgCostPerLitre = totalFuel > 0 ? (totalCost / totalFuel).toFixed(2) : 0;
 
   return (
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Fuel Logs & Expenses"
-        subtitle="Person 1: Fuel consumption logs, expenditure tracking, and station transactions"
-        badgeText="Person 1"
-        badgeColor="bg-amber-200"
+        subtitle="Fuel consumption logs, expenditure tracking, and station transactions"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Log Fuel Refill
@@ -672,22 +677,22 @@ export function FuelPage() {
               {logs.map((l) => (
                 <tr key={l.id} className="hover:bg-amber-50/50 transition">
                   <td className="py-3 px-4 text-slate-600 text-xs font-semibold">
-                    {new Date(l.fuelDate).toLocaleDateString()}
+                    {new Date(l.refuelledAt || l.fuelDate || Date.now()).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4">
                     <span className="font-mono text-xs text-accent block font-bold">
-                      {l.vehicle?.registrationNumber}
+                      {l.vehicle?.registrationNo || l.vehicle?.registrationNumber}
                     </span>
                     <span className="text-xs text-slate-500 font-medium">
                       {l.vehicle?.make} {l.vehicle?.model}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-heading font-bold text-foreground">{l.fuelQuantity} L</td>
-                  <td className="py-3 px-4 text-emerald-800 font-bold">₹{l.fuelCost.toLocaleString()}</td>
+                  <td className="py-3 px-4 font-heading font-bold text-foreground">{l.quantityLitres ?? l.fuelQuantity} L</td>
+                  <td className="py-3 px-4 text-emerald-800 font-bold">₹{Number(l.cost ?? l.fuelCost).toLocaleString()}</td>
                   <td className="py-3 px-4 text-slate-600 text-xs font-mono">
-                    ₹{(l.fuelCost / l.fuelQuantity).toFixed(2)}/L
+                    ₹{(((Number(l.cost ?? l.fuelCost) || 0) / (Number(l.quantityLitres ?? l.fuelQuantity) || 1))).toFixed(2)}/L
                   </td>
-                  <td className="py-3 px-4 text-slate-700 text-xs font-mono">{l.odometer.toLocaleString()} km</td>
+                  <td className="py-3 px-4 text-slate-700 text-xs font-mono">{(l.odometerKm ?? l.odometer ?? '—')} km</td>
                   <td className="py-3 px-4 text-slate-600 text-xs">{l.station || '—'}</td>
                 </tr>
               ))}
@@ -717,7 +722,7 @@ export function FuelPage() {
                 >
                   {vehicles.map(v => (
                     <option key={v.id} value={v.id}>
-                      {v.registrationNumber} — {v.make} {v.model}
+                      {v.registrationNo || v.registrationNumber} — {v.make} {v.model}
                     </option>
                   ))}
                 </select>
@@ -839,8 +844,10 @@ export function MaintenancePage() {
         maintenanceType: formData.maintenanceType,
         description: formData.description,
         cost: Number(formData.cost),
+        serviceDate: new Date(formData.startDate).toISOString(),
         startDate: new Date(formData.startDate).toISOString(),
         nextServiceDate: formData.nextServiceDate ? new Date(formData.nextServiceDate).toISOString() : null,
+        odometerKm: Number(formData.odometer),
         odometer: Number(formData.odometer),
         status: formData.status,
         technician: formData.technician
@@ -868,9 +875,7 @@ export function MaintenancePage() {
     <div className="space-y-8 fade-in">
       <PageHeader
         title="Fleet Maintenance & Servicing"
-        subtitle="Person 1: Preventative schedules, repair bills, technician notes, and due alerts"
-        badgeText="Person 1"
-        badgeColor="bg-rose-200"
+        subtitle="Preventative schedules, repair bills, technician notes, and due alerts"
         action={
           <button onClick={() => setShowModal(true)} className="btn-primary">
             <Plus className="w-4 h-4 stroke-[2.5px]" /> Schedule Service
@@ -891,7 +896,7 @@ export function MaintenancePage() {
             <div className="mt-2 flex flex-wrap gap-2">
               {dueRecords.map(item => (
                 <span key={item.id} className="badge-yellow text-xs">
-                  {item.vehicle?.registrationNumber} ({item.maintenanceType}) - Due {new Date(item.nextServiceDate).toLocaleDateString()}
+                  {item.vehicle?.registrationNo || item.vehicle?.registrationNumber} ({item.maintenanceType}) - Due {new Date(item.nextServiceDate).toLocaleDateString()}
                 </span>
               ))}
             </div>
@@ -924,7 +929,7 @@ export function MaintenancePage() {
                 <tr key={r.id} className="hover:bg-amber-50/50 transition">
                   <td className="py-3 px-4">
                     <span className="font-mono text-xs text-accent font-bold block">
-                      {r.vehicle?.registrationNumber}
+                      {r.vehicle?.registrationNo || r.vehicle?.registrationNumber}
                     </span>
                     <span className="text-xs text-slate-500 font-medium">
                       {r.vehicle?.make} {r.vehicle?.model}
@@ -934,7 +939,7 @@ export function MaintenancePage() {
                   <td className="py-3 px-4 text-slate-600 text-xs max-w-xs truncate">{r.description}</td>
                   <td className="py-3 px-4 font-heading font-bold text-emerald-800">₹{r.cost.toLocaleString()}</td>
                   <td className="py-3 px-4 text-slate-600 text-xs font-medium">
-                    {new Date(r.startDate).toLocaleDateString()}
+                    {new Date(r.serviceDate || r.startDate).toLocaleDateString()}
                   </td>
                   <td className="py-3 px-4 text-slate-500 text-xs font-medium">
                     {r.nextServiceDate ? new Date(r.nextServiceDate).toLocaleDateString() : '—'}
@@ -981,7 +986,7 @@ export function MaintenancePage() {
                 >
                   {vehicles.map(v => (
                     <option key={v.id} value={v.id}>
-                      {v.registrationNumber} — {v.make} {v.model}
+                      {v.registrationNo || v.registrationNumber} — {v.make} {v.model}
                     </option>
                   ))}
                 </select>

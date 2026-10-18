@@ -8,8 +8,6 @@ import {
 const navSections = [
   {
     title: 'Fleet & Resources',
-    personBadge: 'Person 1',
-    badgeColor: 'bg-secondary text-white',
     items: [
       { to: '/vehicles',    icon: Truck,    label: 'Vehicles',      iconColor: 'bg-sky-200' },
       { to: '/drivers',     icon: Users,    label: 'Drivers',       iconColor: 'bg-emerald-200' },
@@ -19,8 +17,6 @@ const navSections = [
   },
   {
     title: 'Transit & Operations',
-    personBadge: 'Person 2',
-    badgeColor: 'bg-tertiary text-foreground',
     items: [
       { to: '/routes',    icon: Map,          label: 'Routes',     iconColor: 'bg-violet-200' },
       { to: '/trips',     icon: CalendarDays, label: 'Trips',      iconColor: 'bg-pink-200' },
@@ -29,8 +25,6 @@ const navSections = [
   },
   {
     title: 'Intelligence & Schema',
-    personBadge: 'Person 3',
-    badgeColor: 'bg-accent text-white',
     items: [
       { to: '/dashboard',  icon: LayoutDashboard, label: 'Overview',     iconColor: 'bg-sky-200' },
       { to: '/reports',    icon: BarChart3,        label: 'SQL Reports',  iconColor: 'bg-emerald-200' },
@@ -67,12 +61,9 @@ export default function Layout() {
         <nav className="flex-1 overflow-y-auto px-4 py-5 space-y-6">
           {navSections.map((section) => (
             <div key={section.title}>
-              <div className="flex items-center justify-between mb-2.5 px-2">
+              <div className="mb-2.5 px-2">
                 <span className="text-xs font-heading font-extrabold text-foreground uppercase tracking-wider">
                   {section.title}
-                </span>
-                <span className={`text-[10px] font-heading font-extrabold px-2 py-0.5 rounded-full border-2 border-foreground shadow-pop-xs ${section.badgeColor}`}>
-                  {section.personBadge}
                 </span>
               </div>
               

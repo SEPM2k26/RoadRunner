@@ -1,0 +1,194 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    border-color: #1E293B;
+  }
+
+  body {
+    background-color: #FFFDF5;
+    color: #1E293B;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Subtle Memphis Dot Grid Background */
+  .bg-dot-grid {
+    background-image: radial-gradient(#CBD5E1 1.5px, transparent 1.5px);
+    background-size: 24px 24px;
+  }
+
+  /* Memphis Stripes Pattern */
+  .bg-stripes {
+    background: repeating-linear-gradient(
+      45deg,
+      #F1F5F9,
+      #F1F5F9 10px,
+      #FFFFFF 10px,
+      #FFFFFF 20px
+    );
+  }
+}
+
+@layer components {
+  /* -------------------------------------------------------------
+     1. CARDS: The "Sticker" Card
+     ------------------------------------------------------------- */
+  .card {
+    @apply bg-white border-2 border-foreground rounded-2xl p-6 shadow-pop
+           transition-all duration-300 ease-bounce-pop;
+  }
+
+  .card-hover {
+    @apply card hover:-translate-x-0.5 hover:-translate-y-1 hover:shadow-pop-md;
+  }
+
+  .card-sm {
+    @apply bg-white border-2 border-foreground rounded-xl p-4 shadow-pop-xs
+           transition-all duration-200 ease-bounce-pop;
+  }
+
+  /* -------------------------------------------------------------
+     2. BUTTONS: The "Candy Button"
+     ------------------------------------------------------------- */
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white font-heading font-bold text-sm tracking-wide
+           px-5 py-2.5 rounded-full border-2 border-foreground shadow-pop
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-pop-md
+           active:translate-x-0.5 active:translate-y-0.5 active:shadow-pop-xs
+           transition-all duration-200 ease-bounce-pop flex items-center justify-center gap-2
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-pop-xs;
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-tertiary text-foreground font-heading font-bold text-sm tracking-wide
+           px-5 py-2.5 rounded-full border-2 border-foreground shadow-pop
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-pop-md
+           active:translate-x-0.5 active:translate-y-0.5 active:shadow-pop-xs
+           transition-all duration-200 ease-bounce-pop flex items-center justify-center gap-2;
+  }
+
+  .btn-pink {
+    @apply bg-secondary hover:bg-secondary-hover text-white font-heading font-bold text-sm
+           px-5 py-2.5 rounded-full border-2 border-foreground shadow-pop
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-pop-md
+           active:translate-x-0.5 active:translate-y-0.5 active:shadow-pop-xs
+           transition-all duration-200 ease-bounce-pop flex items-center justify-center gap-2;
+  }
+
+  .btn-mint {
+    @apply bg-quaternary hover:bg-quaternary-hover text-foreground font-heading font-bold text-sm
+           px-5 py-2.5 rounded-full border-2 border-foreground shadow-pop
+           hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-pop-md
+           active:translate-x-0.5 active:translate-y-0.5 active:shadow-pop-xs
+           transition-all duration-200 ease-bounce-pop flex items-center justify-center gap-2;
+  }
+
+  .btn-icon {
+    @apply w-9 h-9 rounded-full border-2 border-foreground bg-white text-foreground
+           flex items-center justify-center shadow-pop-xs hover:shadow-pop hover:-translate-y-0.5
+           active:translate-y-0.5 active:shadow-none transition-all duration-200;
+  }
+
+  /* -------------------------------------------------------------
+     3. FORM INPUTS & SELECTS
+     ------------------------------------------------------------- */
+  .input-field {
+    @apply bg-white border-2 border-slate-300 text-foreground placeholder-slate-400
+           rounded-xl px-3.5 py-2 w-full text-sm font-medium
+           focus:outline-none focus:border-accent focus:shadow-pop-violet
+           transition-all duration-200;
+  }
+
+  .select-field {
+    @apply bg-white border-2 border-slate-300 text-foreground
+           rounded-xl px-3.5 py-2 w-full text-sm font-medium
+           focus:outline-none focus:border-accent focus:shadow-pop-violet
+           transition-all duration-200;
+  }
+
+  /* -------------------------------------------------------------
+     4. BADGES (Pill Badges with Hard Outlines)
+     ------------------------------------------------------------- */
+  .badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-heading font-bold
+           border-2 border-foreground uppercase tracking-wider shadow-pop-xs;
+  }
+
+  .badge-green  { @apply badge bg-quaternary text-foreground; }
+  .badge-blue   { @apply badge bg-sky-200 text-foreground; }
+  .badge-yellow { @apply badge bg-tertiary text-foreground; }
+  .badge-red    { @apply badge bg-rose-200 text-foreground; }
+  .badge-purple { @apply badge bg-violet-200 text-foreground; }
+  .badge-gray   { @apply badge bg-slate-200 text-foreground; }
+
+  /* -------------------------------------------------------------
+     5. HEADINGS & TYPOGRAPHY
+     ------------------------------------------------------------- */
+  .page-title {
+    @apply text-3xl font-heading font-extrabold text-foreground tracking-tight;
+  }
+
+  .section-title {
+    @apply text-xl font-heading font-bold text-foreground mb-3 flex items-center gap-2;
+  }
+
+  /* -------------------------------------------------------------
+     6. NAVIGATION ITEM
+     ------------------------------------------------------------- */
+  .nav-item {
+    @apply flex items-center gap-3 px-3.5 py-2.5 rounded-full text-slate-600 font-heading font-semibold
+           hover:text-foreground hover:bg-slate-100 hover:border-2 hover:border-foreground
+           transition-all duration-200 text-sm border-2 border-transparent;
+  }
+
+  .nav-item.active {
+    @apply text-foreground bg-white border-2 border-foreground shadow-pop;
+  }
+
+  /* -------------------------------------------------------------
+     7. ANIMATIONS
+     ------------------------------------------------------------- */
+  .fade-in {
+    animation: popFade 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes popFade {
+    from {
+      opacity: 0;
+      transform: scale(0.96) translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Wiggle effect for playful icons */
+  .wiggle:hover {
+    animation: wiggle 0.4s ease-in-out;
+  }
+
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-8deg); }
+    75% { transform: rotate(8deg); }
+  }
+}

@@ -1,29 +1,3 @@
-import React, { useCallback, useEffect, useState } from "react";
-
-const API = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
-const pages = {
-  Vehicles: { singular: "Vehicle", path: "vehicles", fields: [
-    ["registrationNo", "Registration number", "text", true], ["make", "Make", "text", true], ["model", "Model", "text", true], ["vehicleType", "Vehicle type", "text", true], ["capacity", "Capacity", "number", true], ["fuelType", "Fuel type", "select", true, ["PETROL", "DIESEL", "CNG", "ELECTRIC", "HYBRID", "OTHER"]], ["status", "Availability", "select", true, ["AVAILABLE", "IN_USE", "MAINTENANCE", "INACTIVE"]], ["manufactureYear", "Year", "number"], ["vin", "VIN", "text"], ["odometerKm", "Odometer (km)", "number"]
-  ], columns: [["registrationNo", "Registration"], ["make", "Make"], ["model", "Model"], ["vehicleType", "Type"], ["fuelType", "Fuel"], ["status", "Status"]] },
-  Drivers: { singular: "Driver", path: "drivers", fields: [
-    ["firstName", "First name", "text", true], ["lastName", "Last name", "text", true], ["phone", "Phone", "tel", true], ["email", "Email", "email"], ["licenceNumber", "Licence number", "text", true], ["licenceExpiry", "Licence expiry", "date", true], ["status", "Availability", "select", true, ["AVAILABLE", "ON_TRIP", "INACTIVE"]], ["hiredAt", "Hired date", "date"]
-  ], columns: [["firstName", "First name"], ["lastName", "Last name"], ["phone", "Phone"], ["licenceNumber", "Licence"], ["licenceExpiry", "Expiry"], ["status", "Status"]] },
-  Fuel: { singular: "Fuel log", path: "fuel", fields: [
-    ["vehicleId", "Vehicle", "vehicle", true], ["refuelledAt", "Date", "date"], ["quantityLitres", "Quantity (L)", "number", true], ["cost", "Cost (₹)", "number", true], ["odometerKm", "Odometer (km)", "number"], ["station", "Station", "text"], ["notes", "Notes", "text"]
-  ], columns: [["vehicle.registrationNo", "Vehicle"], ["refuelledAt", "Date"], ["quantityLitres", "Litres"], ["cost", "Cost (₹)"], ["odometerKm", "Odometer km"]] },
-  Maintenance: { singular: "Maintenance record", path: "maintenance", fields: [
-    ["vehicleId", "Vehicle", "vehicle", true], ["serviceDate", "Service date", "date"], ["description", "Description", "text", true], ["cost", "Cost (₹)", "number"], ["odometerKm", "Odometer (km)", "number"], ["nextServiceDate", "Next service date", "date"], ["provider", "Provider", "text"], ["status", "Status", "select", true, ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]]
-  ], columns: [["vehicle.registrationNo", "Vehicle"], ["serviceDate", "Service date"], ["description", "Description"], ["cost", "Cost (₹)"], ["nextServiceDate", "Next due"], ["status", "Status"]] }
-};
-const statusOptions = {
-  vehicles: ["AVAILABLE", "IN_USE", "MAINTENANCE", "INACTIVE"],
-  drivers: ["AVAILABLE", "ON_TRIP", "INACTIVE"]
-};
-
-async function request(path, options = {}) {
-  const response = await fetch(`${API}/${path}`, { ...options, headers: { "Content-Type": "application/json", ...options.headers } });
-  if (response.status === 204) return null;
-  const body = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(body.error || `Request failed (${response.status})`);
   return body;
 }
@@ -88,8 +62,9 @@ function ModulePage({ title, config, vehicles, reloadSignal, onChanged }) {
   </section>;
 }
 
-export default function App() {
-  const [page, setPage] = useState("Vehicles"); const [vehicles, setVehicles] = useState([]); const [availableVehicleCount, setAvailableVehicleCount] = useState("—"); const [driverCount, setDriverCount] = useState("—"); const [reloadSignal, setReloadSignal] = useState(0); const [apiOnline, setApiOnline] = useState(null);
+
+function FleetPage({ page: initialPage = "Vehicles" }) {
+  const [page, setPage] = useState(initialPage); const [vehicles, setVehicles] = useState([]); const [availableVehicleCount, setAvailableVehicleCount] = useState("—"); const [driverCount, setDriverCount] = useState("—"); const [reloadSignal, setReloadSignal] = useState(0); const [apiOnline, setApiOnline] = useState(null);
   const refreshFleetMetrics = useCallback(async () => {
     try {
       const [vehicleRows, driverRows, availableVehicles] = await Promise.all([request("vehicles"), request("drivers?status=AVAILABLE"), request("vehicles?status=AVAILABLE")]);
@@ -106,4 +81,32 @@ export default function App() {
         <footer>RoadRunner · Fleet and driver management · Data is served by the project API</footer>
       </div>
     </main></div>;
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+
+          {/* Person 1 - Fleet and Driver Management */}
+          <Route path="vehicles" element={<FleetPage page="Vehicles" />} />
+          <Route path="drivers" element={<FleetPage page="Drivers" />} />
+          <Route path="fuel" element={<FleetPage page="Fuel" />} />
+          <Route path="maintenance" element={<FleetPage page="Maintenance" />} />
+
+          {/* Person 2 - Routes, Trips and Incidents */}
+          <Route path="routes" element={<RoutesPage />} />
+          <Route path="trips" element={<TripsPage />} />
+          <Route path="incidents" element={<IncidentsPage />} />
+
+          {/* Person 3 - Analytics, Reports and AI/ML */}
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="predict" element={<PredictionPage />} />
+          <Route path="schema" element={<SchemaViewer />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }

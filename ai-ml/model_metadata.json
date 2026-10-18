@@ -1,0 +1,38 @@
+{
+  "model": "RandomForestRegressor",
+  "version": "v1",
+  "features": [
+    "route_distance",
+    "departure_hour",
+    "day_of_week",
+    "historical_avg_delay",
+    "active_incidents",
+    "is_peak_hour",
+    "is_weekend"
+  ],
+  "target": "delay_minutes",
+  "train_samples": 1600,
+  "test_samples": 400,
+  "metrics": {
+    "linear_regression": {
+      "mae": 3.231588821633517,
+      "rmse": 4.035362447296002,
+      "r2": 0.8661950379421888
+    },
+    "random_forest": {
+      "mae": 3.460169437979216,
+      "rmse": 4.302636179792468,
+      "r2": 0.8478834831508192
+    }
+  },
+  "feature_importances": {
+    "route_distance": 0.1753,
+    "departure_hour": 0.0096,
+    "day_of_week": 0.0139,
+    "historical_avg_delay": 0.1131,
+    "active_incidents": 0.5779,
+    "is_peak_hour": 0.1066,
+    "is_weekend": 0.0035
+  },
+  "note": "Trained on 2000 synthetic samples. Real deployment should use historical trip + incident data from MySQL."
+}

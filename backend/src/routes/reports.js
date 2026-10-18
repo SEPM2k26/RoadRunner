@@ -69,6 +69,15 @@ router.get('/fuel', async (req, res) => {
 
     const enriched = fuelPerVehicle.map(f => ({
       ...f,
+      _sum: {
+        cost: Number(f._sum.cost || 0),
+        fuelCost: Number(f._sum.cost || 0),
+        quantityLitres: Number(f._sum.quantityLitres || 0),
+        fuelQuantity: Number(f._sum.quantityLitres || 0),
+      },
+      _avg: {
+        cost: Number(f._avg.cost || 0),
+      },
       vehicle: vehicleMap[f.vehicleId],
     }));
 

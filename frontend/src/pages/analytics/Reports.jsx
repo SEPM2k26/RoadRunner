@@ -126,20 +126,20 @@ export default function Reports() {
 
   const fuelChartData = (fuel?.fuelPerVehicle || []).slice(0, 8).map(f => ({
     name: f.vehicle?.registrationNo || f.vehicle?.registrationNumber || `V${f.vehicleId}`,
-    cost: parseFloat(((f._sum?.cost ?? f._sum?.fuelCost) || 0).toFixed(0)),
-    litres: parseFloat(((f._sum?.quantityLitres ?? f._sum?.fuelQuantity) || 0).toFixed(1)),
+    cost: parseFloat(Number(f._sum?.cost ?? f._sum?.fuelCost ?? 0).toFixed(0)),
+    litres: parseFloat(Number(f._sum?.quantityLitres ?? f._sum?.fuelQuantity ?? 0).toFixed(1)),
   }));
 
   const delayChartData = (trips?.delayPerRoute || []).slice(0, 8).map(d => ({
     name: d.route?.name || `Route ${d.routeId}`,
-    delay: parseFloat((d._avg?.delayMinutes || 0).toFixed(1)),
+    delay: parseFloat(Number(d._avg?.delayMinutes ?? 0).toFixed(1)),
     trips: d._count?.id || 0,
   }));
 
   const incidentChartData = (incidents?.incidentsPerRoute || []).slice(0, 8).map(i => ({
     name: i.route?.name || `Route ${i.routeId}`,
     count: i._count?.id || 0,
-    avgDelay: parseFloat((i._avg?.estimatedDelay || 0).toFixed(1)),
+    avgDelay: parseFloat(Number(i._avg?.estimatedDelay ?? 0).toFixed(1)),
   }));
 
   return (
@@ -183,12 +183,12 @@ export default function Reports() {
         {fuel?.aboveAverage?.length > 0 && (
           <div className="mt-5 p-4 bg-amber-50 border-2 border-foreground rounded-2xl shadow-pop-xs">
             <p className="text-xs font-heading font-extrabold text-foreground mb-2 flex items-center gap-1.5">
-              <span>⚠️</span> Report 8 — Vehicles Exceeding Fleet Average (₹{fuel.fleetAvg?.toFixed(0)})
+              <span>⚠️</span> Report 8 — Vehicles Exceeding Fleet Average (₹{Number(fuel.fleetAvg ?? 0).toFixed(0)})
             </p>
             <div className="flex flex-wrap gap-2">
               {fuel.aboveAverage.map(f => (
                 <span key={f.vehicleId} className="badge-yellow">
-                  {f.vehicle?.registrationNo || f.vehicle?.registrationNumber}: ₹{(f._sum?.cost ?? f._sum?.fuelCost)?.toFixed(0)}
+                  {f.vehicle?.registrationNo || f.vehicle?.registrationNumber}: ₹{Number(f._sum?.cost ?? f._sum?.fuelCost ?? 0).toFixed(0)}
                 </span>
               ))}
             </div>
@@ -229,7 +229,7 @@ export default function Reports() {
                       {t._count?.id}
                     </td>
                     <td className="py-2.5 px-3 text-right font-mono text-xs">
-                      {(t._avg?.delayMinutes || 0).toFixed(1)}m
+                      {Number(t._avg?.delayMinutes ?? 0).toFixed(1)}m
                     </td>
                   </tr>
                 ))}
@@ -317,7 +317,7 @@ export default function Reports() {
             <div className="flex flex-wrap gap-2">
               {trips.aboveThreshold.map((r, i) => (
                 <span key={i} className="badge-red">
-                  {r.route?.name}: +{(r._avg?.delayMinutes || 0).toFixed(1)}m delay
+                  {r.route?.name}: +{Number(r._avg?.delayMinutes ?? 0).toFixed(1)}m delay
                 </span>
               ))}
             </div>

@@ -10,7 +10,8 @@
     "prisma:generate": "npx prisma generate",
     "prisma:studio": "npx prisma studio",
     "seed": "node src/seed.js",
-  "test:api": "npx node --test person2.api.test.js"
+    "test:api": "npx node --test tests/person2.api.test.mjs"
+  }
   },
   "keywords": [],
   "author": "",

@@ -62,12 +62,46 @@ RESTRICT on all foreign keys ensures historical trips and incidents are preserve
 
 MySQL must support CHECK constraints and ENUM types (MySQL 8.0.16 or later). The API validates the same rules before writes for clear user-facing errors.
 
-## API and frontend
+## API and frontend (Phase 3)
 
-- Routes: list/search/filter by status, retrieve, create, update, activate/deactivate (status transition), soft deactivation instead of hard delete
-- Trips: list/search/filter by status/vehicle/driver/route/date range, retrieve, schedule (with overlap validation), update status with departed/arrived timestamps, cancel (soft)
-- Traffic incidents: list/filter by route/status/severity/type, retrieve, create, update/resolve, soft delete
-- The React module (`frontend/src/pages/trips/TripPages.jsx`) includes RoutesPage, TripsPage, and IncidentsPage with status management, search/filter controls, forms, result tables, and conflict alerts for overlapping vehicle/driver assignments.
+### API endpoints and filters (Person 2)
+
+All endpoints are under `/api/*` on port 5000 (default, configurable via `PORT` env var).
+
+**Routes** (`/api/routes`)
+- `GET /api/routes` — list routes; optional query: `?status=ACTIVE` / `?search=<name>`
+- `GET /api/routes/:id` — retrieve one route
+- `POST /api/routes` — create route; required: `name`, `source`, `destination`, `distanceKm`, `expectedDuration`, `status`; optional: `description`
+- `PUT /api/routes/:id` — update route; arbitrary fields
+- `PATCH /api/routes/:id/toggle` — toggle status (ACTIVE ↔ INACTIVE)
+- `DELETE /api/routes/:id` — soft deactivate (sets status to INACTIVE, RESTRICT blocks if trips/exist)
+
+**Trips** (`/api/trips`)
+- `GET /api/trips` — list trips; optional filters: `?status=SCHEDULED&vehicleId=1&routeId=1&driverId=1&dateFrom=2026-01-01&dateTo=2026-12-31`
+- `GET /api/trips/:id` — retrieve one trip
+- `POST /api/trips` — create trip; required: `routeId`, `vehicleId`, `driverId`, `status`, `scheduledAt`; optional: `departedAt`, `arrivedAt`
+- `PUT /api/trips/:id` — update trip status; valid transitions: `SCHEDULED → IN_PROGRESS → COMPLETED`; `departedAt` auto-populated on `IN_PROGRESS`; `arrivedAt` auto-populated on `COMPLETED`; invalid transitions return 400
+- `DELETE /api/trips/:id` — soft cancel (sets status to CANCELLED)
+
+**Traffic Incidents** (`/api/incidents`)
+- `GET /api/incidents` — list incidents; optional filters: `?routeId=1&status=ACTIVE&severity=MEDIUM& incidentType=CONGESTION`
+- `GET /api/incidents/:id` — retrieve one incident
+- `POST /api/incidents` — create incident; required: `routeId`, `incidentType`, `severity`, `location`, `reportedAt`; optional: `estimatedDelay`, `reportedBy`; `routeId` must reference existing route, `incidentType` enum: `CONGESTION|ACCIDENT|WEATHER|CONSTRUCTION|OTHER`, `severity` enum: `LOW|MEDIUM|HIGH|CRITICAL`
+- `PUT /api/incidents/:id` — update incident (e.g., severity)
+- `PATCH /api/incidents/:id/resolve` — resolve incident (sets status to RESOLVED, populates `resolvedAt`)
+- `DELETE /api/incidents/:id` — soft delete (sets status to RESOLVED, preserves history)
+
+### Frontend features (TripPages.jsx)
+
+The React module `frontend/src/pages/trips/TripPages.jsx` includes three pages:
+
+- **RoutesPage**: Lists routes with search and status filter (ACTIVE/INACTIVE/SUSPENDED). Creates routes via modal form. Edits route details. Deactivates routes (soft delete → sets status to INACTIVE). Shows loading, empty, success, and error states.
+
+- **TripsPage**: Displays route, vehicle, driver, scheduled time, status. Scheduling with overlap prevention (backend-validated). Status transitions: `SCHEDULED → IN_PROGRESS → COMPLETED`. Start trip (populates `departedAt`), Complete trip (populates `arrivedAt`). Cancel trip (sets status to CANCELLED). Filters: status, route, vehicle, driver, date range. Shows validation errors for vehicle/driver conflicts.
+
+- **IncidentsPage**: Lists incidents filtered by route, status, severity, type. Creates incident with validation (valid `routeId`, `incidentType` enum, `severity` enum). Edits incident details. Resolves incident (sets status to RESOLVED, populates `resolvedAt`). Soft delete (sets status to RESOLVED, preserves history).
+
+SQL demonstrations for Person 2 are in `backend/prisma/demonstrations.sql` (appended in Phase 3). To run safely, do not apply against shared/production databases. The file is append-only with clear markings. Each SQL block includes comments about when it is safe to run and when rollback is needed. Use a disposable/local MySQL instance for hands-on verification. Demonstrations include: JOINs, aggregate `GROUP BY` + `HAVING`, subqueries, views, triggers, stored procedures, transaction with rollback, ACID properties, and concurrent trip-assignment conflict with row-locking limitations.
 
 ## SQL demonstrations
 

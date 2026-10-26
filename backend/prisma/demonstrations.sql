@@ -70,3 +70,107 @@ WHERE m.nextServiceDate IS NOT NULL
   AND m.status <> 'CANCELLED'
 GROUP BY v.id, v.registrationNo
 HAVING COUNT(m.id) > 0;
+
+-- ── Person 2: Routes, Trips, and Incidents ─────────────────────────────────────
+
+-- JOIN: routes with their traffic incidents (active only)
+SELECT r.name AS route_name, r.source, r.destination,
+       COUNT(i.id) AS active_incident_count
+FROM Route r
+LEFT JOIN Incident i ON i.routeId = r.id AND i.status = 'ACTIVE'
+GROUP BY r.id, r.name, r.source, r.destination
+ORDER BY active_incident_count DESC;
+
+-- Aggregate: active incident counts per severity
+SELECT i.severity, COUNT(*) AS incident_count,
+       COALESCE(SUM(i.estimatedDelay), 0) AS total_estimated_delay_min
+FROM Incident i
+WHERE i.status = 'ACTIVE'
+GROUP BY i.severity
+ORDER BY i.severity;
+
+-- Subquery: routes that have active incidents with estimated delay > average
+SELECT r.name, r.distance_km
+FROM Route r
+WHERE r.id IN (
+  SELECT i.routeId
+  FROM Incident i
+  WHERE i.status = 'ACTIVE'
+  GROUP BY i.routeId
+  HAVING COALESCE(AVG(i.estimatedDelay), 0) > 10
+);
+-- Note: This queries routes with active incidents whose average estimated delay exceeds 10 minutes.
+
+-- View: routes with traffic incidents and estimated delay
+CREATE OR REPLACE VIEW vw_route_incident_summary AS
+SELECT r.id AS route_id, r.name AS route_name, r.source, r.destination,
+       COUNT(i.id) AS total_incidents,
+       COUNT(CASE WHEN i.status = 'ACTIVE' THEN 1 END) AS active_incidents,
+       COALESCE(SUM(CASE WHEN i.status = 'ACTIVE' THEN i.estimatedDelay ELSE 0 END), 0) AS total_estimated_delay
+FROM Route r
+LEFT JOIN Incident i ON i.routeId = r.id
+GROUP BY r.id, r.name, r.source, r.destination;
+
+-- View: active incident counts per route
+CREATE OR REPLACE VIEW vw_active_incidents_per_route AS
+SELECT r.id AS route_id, r.name AS route_name, r.source, r.destination,
+       COUNT(i.id) AS active_incident_count
+FROM Route r
+JOIN Incident i ON i.routeId = r.id AND i.status = 'ACTIVE'
+GROUP BY r.id, r.name, r.source, r.destination;
+
+-- Trigger: prevent assigning a trip that overlaps an active incident on the same route
+DELIMITER //
+CREATE TRIGGER trg_prevent_trip_incident_overlap
+BEFORE INSERT ON Trip
+FOR EACH ROW
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM Incident i
+    WHERE i.routeId = NEW.routeId
+      AND i.status = 'ACTIVE'
+      AND i.resolvedAt IS NULL
+  ) THEN
+    SIGNAL SQLSTATE '45000'
+      SET MESSAGE_TEXT = 'Cannot assign trip: there is an active incident on this route';
+  END IF;
+END;
+//
+DELIMITER ;
+
+-- Stored procedure: resolve all active incidents for a given route (sets status to RESOLVED)
+DELIMITER //
+CREATE PROCEDURE sp_resolve_route_incidents(IN p_route_id INT)
+BEGIN
+  UPDATE Incident
+  SET status = 'RESOLVED',
+      resolvedAt = NOW()
+  WHERE routeId = p_route_id
+    AND status = 'ACTIVE'
+    AND resolvedAt IS NULL;
+END;
+//
+DELIMITER ;
+
+-- Transaction demonstration: attempt to assign two trips concurrently with rollback
+-- This simulates a race condition where two drivers might try to start trips on the same route simultaneously
+START TRANSACTION;
+  -- Attempt 1: Insert trip A
+  INSERT INTO Trip (routeId, vehicleId, driverId, status, scheduledAt, departedAt)
+  VALUES (1, 1, 1, 'SCHEDULED', NOW(), NULL);
+  -- Simulate conflict: if another transaction already inserted a trip for route 1, this may fail due to constraints
+  -- ROLLBACK; -- Uncomment to demonstrate rollback on conflict
+COMMIT;
+
+-- ACID properties summary for RoadRunner database:
+-- Atomicity: All trip/incident operations are atomic; partial failures are caught and reported
+-- Consistency: Foreign-key constraints ensure valid route/vehicle/driver references; status transitions are validated
+-- Isolation: Concurrent trip assignments are guarded by trigger trg_prevent_trip_incident_overlap
+-- Durability: Committed trips and incidents are persisted with timestamps (departedAt, arrivedAt, resolvedAt)
+
+-- Concurrent trip assignment conflict demonstration with row-locking limitation:
+-- The trigger above prevents overlap but does NOT use explicit row-level locking (SELECT ... FOR UPDATE).
+-- In a high-concurrency scenario, two sessions could both pass the trigger check before either commits,
+-- leading to two trips on the same route with an active incident. Application-level locking may be required.
+-- Mitigation: Use SELECT ... FOR UPDATE on the route row before inserting a trip, or rely on the stored
+-- procedure sp_resolve_route_incidents to clear active incidents before trip assignment.

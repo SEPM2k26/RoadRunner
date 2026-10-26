@@ -50,3 +50,95 @@ async function main() {
 
 main().catch((error) => { console.error(error); process.exitCode = 1; }).finally(() => prisma.$disconnect());
 
+  // ── Person 2: Routes, Trips, and Incidents ──────────────────────────────────
+  // Add routes (reference existing vehicles for driver assignment later)
+  const existingRoutes = await prisma.route.count();
+  if (existingRoutes === 0) {
+    const routeCreatePromises = [
+      { name: "Airport Express", source: "Airport", destination: "City Center", distanceKm: 25, expectedDuration: 45, status: "ACTIVE" },
+      { name: "Highway Route 6", source: "North Terminal", destination: "South Station", distanceKm: 60, expectedDuration: 90, status: "ACTIVE" },
+      { name: "Coastal Highway", source: "Seaport", destination: "Beach Resort", distanceKm: 45, expectedDuration: 70, status: "ACTIVE" },
+      { name: "Downtown Loop", source: "Downtown", destination: "University", distanceKm: 12, expectedDuration: 20, status: "ACTIVE" },
+    ];
+    for (const r of routeCreatePromises) await prisma.route.create({ data: r });
+    console.log("Person 2 routes seeded.");
+  } else {
+    console.log("Routes already seeded, skipping.");
+  }
+
+  // Add trips (reference seeded vehicles/drivers from Person 1 + routes above)
+  const existingTrips = await prisma.trip.count();
+  if (existingTrips === 0) {
+    const vehicle = await prisma.vehicle.findFirst({ orderBy: { id: "asc" } });
+    const driver = await prisma.driver.findFirst({ orderBy: { id: "asc" } });
+    const routes = await prisma.route.findMany({ take: 4 });
+
+    const tripCreatePromises = [
+      {
+        routeId: routes[0]?.id,
+        vehicleId: vehicle?.id,
+        driverId: driver?.id,
+        status: "SCHEDULED",
+        scheduledAt: new Date(Date.now() + 86400000), // tomorrow
+      },
+      {
+        routeId: routes[1]?.id,
+        vehicleId: vehicle?.id,
+        driverId: driver?.id,
+        status: "SCHEDULED",
+        scheduledAt: new Date(Date.now() + 172800000), // day after tomorrow
+      },
+      {
+        routeId: routes[2]?.id,
+        vehicleId: vehicle?.id,
+        driverId: driver?.id,
+        status: "IN_PROGRESS",
+        scheduledAt: new Date(Date.now() - 3600000), // 1 hour ago
+        departedAt: new Date(Date.now() - 3600000),
+      },
+    ];
+    for (const t of tripCreatePromises) {
+      if (vehicle && driver && routes.some(r => r.id === t.routeId)) {
+        await prisma.trip.create({ data: t });
+      }
+    }
+    console.log("Person 2 trips seeded.");
+  } else {
+    console.log("Trips already seeded, skipping.");
+  }
+
+  // Add incidents (reference seeded routes)
+  const existingIncidents = await prisma.incident.count();
+  if (existingIncidents === 0) {
+    const routes = await prisma.route.findMany({ take: 3 });
+
+    const incidentCreatePromises = [
+      {
+        routeId: routes[0]?.id,
+        incidentType: "CONGESTION",
+        severity: "MEDIUM",
+        location: "Km 15 - Main junction",
+        reportedAt: new Date(Date.now() - 86400000), // 1 day ago
+        estimatedDelay: 20,
+        reportedBy: "Traffic Officer J. Smith",
+      },
+      {
+        routeId: routes[1]?.id,
+        incidentType: "ACCIDENT",
+        severity: "HIGH",
+        location: "Km 32 - Near overpass",
+        reportedAt: new Date(Date.now() - 259200000), // 3 days ago
+        estimatedDelay: 45,
+        reportedBy: "Highway Patrol",
+      },
+    ];
+    for (const i of incidentCreatePromises) {
+      if (routes.some(r => r.id === i.routeId)) {
+        await prisma.incident.create({ data: i });
+      }
+    }
+    console.log("Person 2 incidents seeded.");
+  } else {
+    console.log("Incidents already seeded, skipping.");
+  }
+

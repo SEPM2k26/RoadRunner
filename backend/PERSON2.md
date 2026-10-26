@@ -8,6 +8,7 @@
 - Deactivating a route (`status = INACTIVE`) does **not** cascade-delete historical trips or incidents. Foreign keys use `ON DELETE RESTRICT`, so a route with existing trips or incidents cannot be deleted until those records are removed or re-pointed.
 - Traffic incidents are associated with exactly one route and record type, severity, location, estimated delay, and resolution timestamp.
 - Trip scheduling must reject overlapping assignments for the same vehicle or driver within a conflicting time window (enforced by the API layer in Phase 2, supported by indexes in this migration).
+- **Table-name compatibility**: Person 1 migrations were updated (October 2026) to use lowercase table names (`vehicles`, `drivers`, `fuel_logs`, `maintenance_records`) matching Prisma's `@@map` annotations. This ensures FK references in Person 2 (`vehicles(id)`, `drivers(id)`) are compatible with Person 1 tables on MySQL with `lower_case_table_names=0`.
 
 ## Tables, keys, and relationships
 
